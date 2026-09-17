@@ -2,8 +2,9 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ЧЁТ-НЕЧЕТ · light cipher</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>ЧЁТ-НЕЧЕТ</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
     --bg: #1a1a1c;
@@ -14,26 +15,35 @@
     --border: #34343a;
     --err: #ff6b6b;
   }
+
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; padding: 0; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
   body {
-    padding: 24px 16px;
+    padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
     background: var(--bg);
     color: var(--fg);
     font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
     font-size: 15px;
-    min-height: 100vh;
     display: flex;
     justify-content: center;
+    min-height: 100vh;
   }
+
   .app { width: 100%; max-width: 720px; }
 
   h1 {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     letter-spacing: 2px;
     color: var(--muted);
-    margin: 0 0 6px;
+    margin: 0 0 4px;
     text-transform: uppercase;
     text-align: center;
   }
@@ -43,14 +53,14 @@
     text-align: center;
     font-size: 12px;
     color: #5a5a62;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
   }
 
   .rule {
     text-align: center;
     font-size: 13px;
     color: var(--muted);
-    margin-bottom: 18px;
+    margin-bottom: 14px;
     padding: 10px;
     background: var(--bg2);
     border-radius: 8px;
@@ -60,8 +70,8 @@
 
   input[type="text"] {
     width: 100%;
-    padding: 12px 14px;
-    border-radius: 8px;
+    padding: 14px;
+    border-radius: 10px;
     border: 1px solid var(--border);
     background: var(--bg);
     color: var(--fg);
@@ -76,20 +86,20 @@
   .output {
     min-height: 1.8em;
     padding: 12px 14px;
-    border-radius: 8px;
+    border-radius: 10px;
     background: var(--bg2);
     font-size: 14px;
     word-break: break-word;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     white-space: pre-wrap;
     line-height: 1.7;
   }
   .output .main { color: var(--accent); font-weight: 700; font-size: 16px; }
-  .output .meta { color: var(--muted); margin-top: 4px; }
+  .output .meta { color: var(--muted); margin-top: 4px; font-size: 12px; }
   .output .debug { color: #5a5a62; margin-top: 4px; font-size: 11px; }
   .output .err { color: var(--err); }
 
-  .board { display: flex; align-items: flex-start; gap: 12px; }
+  .board { display: flex; align-items: flex-start; gap: 10px; }
   .grid {
     flex: 1;
     display: flex;
@@ -97,7 +107,7 @@
     gap: 8px;
     user-select: none;
   }
-  .row { display: flex; gap: 10px; justify-content: space-between; }
+  .row { display: flex; gap: 8px; justify-content: space-between; }
   .letter {
     cursor: pointer;
     padding: 4px 5px;
@@ -114,24 +124,35 @@
     vertical-align: super;
   }
 
-  .actions { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 4px;
+  }
   .actions button {
-    width: 32px; height: 32px;
-    display: flex; align-items: center; justify-content: center;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 50%;
     border: 1px solid var(--border);
     background: var(--bg2);
     color: var(--muted);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1;
     transition: all .15s;
     font-family: inherit;
   }
-  .actions button:hover, .actions button:active { color: var(--accent); background: #2c2c32; }
+  .actions button:hover, .actions button:active {
+    color: var(--accent);
+    background: #2c2c32;
+  }
 
   .footer {
-    margin-top: 20px;
+    margin-top: 16px;
     font-size: 11px;
     color: #4a4a52;
     text-align: center;
@@ -139,10 +160,10 @@
   }
 
   @media (max-width: 520px) {
-    .row { gap: 6px; }
+    .row { gap: 5px; }
     .letter { padding: 3px 3px; font-size: 14px; }
     .letter .num { font-size: 9px; }
-    .actions button { width: 30px; height: 30px; }
+    .actions button { width: 34px; height: 34px; }
   }
 </style>
 </head>
@@ -154,8 +175,7 @@
 
   <div class="rule">
     <b>Шифровка:</b> номер буквы чётный → +1, нечётный → −1<br>
-    <b>Расшифровка:</b> число чётное → +1, нечётное → −1<br>
-    <span style="opacity:.6;">правило симметричное — применяй дважды, вернёшься назад</span>
+    <b>Расшифровка:</b> число чётное → +1, нечётное → −1
   </div>
 
   <input type="text" id="input" placeholder="Слово или числа через пробел…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -165,7 +185,8 @@
   <div class="board">
     <div class="grid" id="grid"></div>
     <div class="actions">
-      <button id="btnCopy" title="Копировать результат">📋</button>
+      <button id="btnShare" title="Поделиться">📤</button>
+      <button id="btnCopy" title="Копировать">📋</button>
     </div>
   </div>
 
@@ -174,26 +195,41 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  ЧЁТ-НЕЧЕТ · light cipher
-//  чёт → +1  ·  нечёт → −1
+//  ЧЁТ-НЕЧЕТ · light cipher · Telegram WebApp edition
 // ═══════════════════════════════════════════════════════════
 
+const tg = window.Telegram?.WebApp;
+
+// ——— Telegram setup ———
+if (tg) {
+  tg.ready();
+  tg.expand();
+  try { tg.setHeaderColor("#1a1a1c"); } catch (e) {}
+  try { tg.setBackgroundColor("#1a1a1c"); } catch (e) {}
+  try { tg.disableVerticalSwipes?.(); } catch (e) {}
+}
+
+// ——— вибрация (если есть) ———
+function buzz(style = "light") {
+  try { tg?.HapticFeedback?.impactOccurred(style); } catch (e) {}
+}
+
+// ——— алфавит ———
 const BASE = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".split("");
 const N = BASE.length; // 33
 
-// правило: одно и то же в обе стороны
+// ——— правило: симметричное ———
 function shift(n) {
   return n % 2 === 0 ? n + 1 : n - 1;
 }
 
-// ——— шифрование ———
 function encode(text) {
   const clean = text.toUpperCase().replace(/[^А-ЯЁ]/g, "");
   const out = [], dbg = [];
   for (const ch of clean) {
     const idx = BASE.indexOf(ch);
     if (idx < 0) continue;
-    const num = idx + 1;         // А=1, Б=2, … Я=33
+    const num = idx + 1;
     const s = shift(num);
     out.push(s);
     dbg.push(`${ch}(${num})→${s}`);
@@ -201,12 +237,11 @@ function encode(text) {
   return { nums: out, dbg };
 }
 
-// ——— расшифровка ———
 function decode(nums) {
   const letters = [];
   const unknown = [];
   for (const n of nums) {
-    const orig = shift(n);       // симметричное правило
+    const orig = shift(n);
     if (orig >= 1 && orig <= N) {
       letters.push(BASE[orig - 1]);
     } else {
@@ -251,12 +286,40 @@ rows.forEach((row) => {
   gridEl.appendChild(rowEl);
 });
 
-// ——— кнопка копирования ———
-const btnCopy = document.getElementById("btnCopy");
+// ——— кнопки ———
+const btnCopy  = document.getElementById("btnCopy");
+const btnShare = document.getElementById("btnShare");
+
 btnCopy.onclick = () => {
+  buzz();
   navigator.clipboard.writeText(outputEl.dataset.copy || "");
   btnCopy.textContent = "✓";
   setTimeout(() => btnCopy.textContent = "📋", 800);
+};
+
+btnShare.onclick = () => {
+  buzz();
+  const text = outputEl.dataset.copy || "";
+  if (!text) return;
+
+  if (tg) {
+    // Telegram share через WebApp API
+    try {
+      tg.showPopup({
+        title: "Поделиться",
+        message: text,
+        buttons: [{ type: "ok" }]
+      });
+      navigator.clipboard.writeText(text);
+    } catch (e) {
+      navigator.clipboard.writeText(text);
+    }
+  } else {
+    navigator.clipboard.writeText(text);
+  }
+
+  btnShare.textContent = "✓";
+  setTimeout(() => btnShare.textContent = "📤", 800);
 };
 
 // ——— рендер ———
