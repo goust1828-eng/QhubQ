@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ЧЁТ-НЕЧЕТ · light cipher</title>
+<style>
+  :root {
+    --bg: #1a1a1c;
+    --bg2: #232326;
+    --fg: #e6e6e8;
+    --muted: #8a8a90;
+    --accent: #7ee0a8;
+    --border: #34343a;
+    --err: #ff6b6b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    padding: 24px 16px;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 15px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+  }
+  .app { width: 100%; max-width: 720px; }
+
+  h1 {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin: 0 0 6px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    text-align: center;
+    font-size: 12px;
+    color: #5a5a62;
+    margin-bottom: 18px;
+  }
+
+  .rule {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 18px;
+    padding: 10px;
+    background: var(--bg2);
+    border-radius: 8px;
+    line-height: 1.7;
+  }
+  .rule b { color: var(--accent); }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 16px;
+    font-family: inherit;
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  .output {
+    min-height: 1.8em;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--bg2);
+    font-size: 14px;
+    word-break: break-word;
+    margin-bottom: 14px;
+    white-space: pre-wrap;
+    line-height: 1.7;
+  }
+  .output .main { color: var(--accent); font-weight: 700; font-size: 16px; }
+  .output .meta { color: var(--muted); margin-top: 4px; }
+  .output .debug { color: #5a5a62; margin-top: 4px; font-size: 11px; }
+  .output .err { color: var(--err); }
+
+  .board { display: flex; align-items: flex-start; gap: 12px; }
+  .grid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    user-select: none;
+  }
+  .row { display: flex; gap: 10px; justify-content: space-between; }
+  .letter {
+    cursor: pointer;
+    padding: 4px 5px;
+    border-radius: 4px;
+    transition: color .12s, background .12s;
+  }
+  .letter:hover { color: var(--accent); }
+  .letter.highlight { background: #2c2c32; color: var(--accent); }
+  .letter .ch { font-weight: 700; }
+  .letter .num {
+    font-size: 10px;
+    opacity: .55;
+    margin-left: 1px;
+    vertical-align: super;
+  }
+
+  .actions { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+  .actions button {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: all .15s;
+    font-family: inherit;
+  }
+  .actions button:hover, .actions button:active { color: var(--accent); background: #2c2c32; }
+
+  .footer {
+    margin-top: 20px;
+    font-size: 11px;
+    color: #4a4a52;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  @media (max-width: 520px) {
+    .row { gap: 6px; }
+    .letter { padding: 3px 3px; font-size: 14px; }
+    .letter .num { font-size: 9px; }
+    .actions button { width: 30px; height: 30px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <h1>🔢 <span>ЧЁТ-НЕЧЕТ</span> · light cipher</h1>
+  <div class="subtitle">чёт → +1 &nbsp;·&nbsp; нечёт → −1</div>
+
+  <div class="rule">
+    <b>Шифровка:</b> номер буквы чётный → +1, нечётный → −1<br>
+    <b>Расшифровка:</b> число чётное → +1, нечётное → −1<br>
+    <span style="opacity:.6;">правило симметричное — применяй дважды, вернёшься назад</span>
+  </div>
+
+  <input type="text" id="input" placeholder="Слово или числа через пробел…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+  <div class="output" id="output"></div>
+
+  <div class="board">
+    <div class="grid" id="grid"></div>
+    <div class="actions">
+      <button id="btnCopy" title="Копировать результат">📋</button>
+    </div>
+  </div>
+
+  <div class="footer">ЧЁТ-НЕЧЕТ v1 · 33 letters · one rule</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  ЧЁТ-НЕЧЕТ · light cipher
+//  чёт → +1  ·  нечёт → −1
+// ═══════════════════════════════════════════════════════════
+
+const BASE = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".split("");
+const N = BASE.length; // 33
+
+// правило: одно и то же в обе стороны
+function shift(n) {
+  return n % 2 === 0 ? n + 1 : n - 1;
+}
+
+// ——— шифрование ———
+function encode(text) {
+  const clean = text.toUpperCase().replace(/[^А-ЯЁ]/g, "");
+  const out = [], dbg = [];
+  for (const ch of clean) {
+    const idx = BASE.indexOf(ch);
+    if (idx < 0) continue;
+    const num = idx + 1;         // А=1, Б=2, … Я=33
+    const s = shift(num);
+    out.push(s);
+    dbg.push(`${ch}(${num})→${s}`);
+  }
+  return { nums: out, dbg };
+}
+
+// ——— расшифровка ———
+function decode(nums) {
+  const letters = [];
+  const unknown = [];
+  for (const n of nums) {
+    const orig = shift(n);       // симметричное правило
+    if (orig >= 1 && orig <= N) {
+      letters.push(BASE[orig - 1]);
+    } else {
+      unknown.push(n);
+    }
+  }
+  return { word: letters.join(""), unknown };
+}
+
+// ——— UI ———
+const inputEl  = document.getElementById("input");
+const outputEl = document.getElementById("output");
+const gridEl   = document.getElementById("grid");
+
+// ——— клавиатура ———
+const rows = [BASE.slice(0, 11), BASE.slice(11, 22), BASE.slice(22, 33)];
+const refs = new Map();
+
+rows.forEach((row) => {
+  const rowEl = document.createElement("div");
+  rowEl.className = "row";
+
+  row.forEach((letter) => {
+    const num = BASE.indexOf(letter) + 1;
+
+    const span = document.createElement("span");
+    span.className = "letter";
+
+    const ch = document.createElement("span");
+    ch.className = "ch";
+    ch.textContent = letter;
+
+    const n = document.createElement("span");
+    n.className = "num";
+    n.textContent = num;
+
+    span.append(ch, n);
+    rowEl.appendChild(span);
+    refs.set(letter, span);
+  });
+
+  gridEl.appendChild(rowEl);
+});
+
+// ——— кнопка копирования ———
+const btnCopy = document.getElementById("btnCopy");
+btnCopy.onclick = () => {
+  navigator.clipboard.writeText(outputEl.dataset.copy || "");
+  btnCopy.textContent = "✓";
+  setTimeout(() => btnCopy.textContent = "📋", 800);
+};
+
+// ——— рендер ———
+function render() {
+  const raw = inputEl.value.trim();
+  refs.forEach((span) => span.classList.remove("highlight"));
+  outputEl.dataset.copy = "";
+
+  if (!raw) { outputEl.textContent = ""; return; }
+
+  // числа → расшифровка
+  if (/^[\d\s,]+$/.test(raw) && /\d/.test(raw)) {
+    const nums = raw.split(/[\s,]+/).filter(Boolean).map(Number);
+    const { word, unknown } = decode(nums);
+    outputEl.dataset.copy = word;
+
+    outputEl.innerHTML =
+      `<div class="main">${word || "—"}</div>` +
+      `<div class="meta">🔓 расшифровка` +
+        (unknown.length ? ` · <span class="err">вне диапазона: ${unknown.join(", ")}</span>` : "") +
+      `</div>`;
+
+    for (const ch of word) {
+      const ref = refs.get(ch);
+      if (ref) ref.classList.add("highlight");
+    }
+    return;
+  }
+
+  // слово → шифровка
+  const { nums, dbg } = encode(raw);
+  outputEl.dataset.copy = nums.join(" ");
+
+  outputEl.innerHTML =
+    `<div class="main">${nums.join(" ")}</div>` +
+    `<div class="meta">🔒 шифровка · символов: ${nums.length}</div>` +
+    `<div class="debug">${dbg.join("  ")}</div>`;
+
+  const set = new Set(raw.toUpperCase().replace(/[^А-ЯЁ]/g, ""));
+  refs.forEach((span, letter) => {
+    if (set.has(letter)) span.classList.add("highlight");
+  });
+}
+
+inputEl.addEventListener("input", render);
+render();
+</script>
+</body>
+</html>
